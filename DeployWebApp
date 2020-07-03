@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+    environment {
+        GitBranch = "master"        
+    }
+    
+    stages {
+        stage('Clean Jenkins Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('Git Clone') {
+            steps {
+                dir("DeployWebApp") {
+                    sh 'pwd'
+                    git(
+                        url: 'https://github.com/agilancolbert/CICD_TP_Deploy_WebApp.git',
+                        credentialsId: '230b152e-b19e-4369-b6b5-68914f6456c2',
+                        branch: "${GitBranch}"
+                    )
+                    sh "ls -l"
+                }
+            }
+        }
+        
+        stage('Deploy App') {
+            steps {
+                dir("DeployWebApp") {
+                    sh "pwd"
+                    sh "ls"
+                    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                        sh "terraform init -backend-config='bucket=devops-efrei-agikexel' -backend-config='key=$APP_NAME/$ENV/DeployWebApp/infra.tfstate' -backend-config='region=eu-west-1'"
+                        sh "terraform apply -auto-approve"
+                    }
+                }
+            }
+        }
+    }
+}
