@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+     environment {
+        AWS_DEFAULT_REGION='eu-west-1'
+    }
+    
+    stages {
+        stage('Clean Jenkins Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+        stage('Destroy AMI - Snapshot') {
+            steps {
+                dir("AMICleaner") {
+                    sh "pwd"
+                    sh "ls"
+                    sh "amicleaner -v"
+                    sh "amicleaner --mapping-key name --mapping-values $ENV-$APP_NAME-AMI --keep-previous -1 --ami-min-days -1 -f"
+                }
+            }
+        }
+    }
+}
