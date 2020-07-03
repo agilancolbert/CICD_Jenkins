@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    environment {
+        GitBranch = "master"
+        EC2_IP = sh(script: 'curl http://169.254.169.254/latest/meta-data/public-ipv4', returnStdout: true)
+    }
+    
+    stages {
+        stage('Clean Jenkins Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+       
+        stage('Git Clone') {
+            steps {
+                dir("Build_WebAMI") {
+                    sh 'pwd'
+                    git(
+                        url: 'https://github.com/agilancolbert/CICD_TP_Build_AMI.git',
+                        credentialsId: '230b152e-b19e-4369-b6b5-68914f6456c2',
+                        branch: "${GitBranch}"
+                    )
+                    sh "ls -l"
+                }
+            }
+        }
+        
+        stage('Build AMI') {
+            steps {
+                dir("Build_WebAMI/Packer") {
+                    sh "packer build \
+                    -var ec2_ip=$EC2_IP \
+                    -var env=$ENV \
+                    -var app_name=$APP_NAME \
+                    -var app_repo=$APP_REPO \
+                    -var app_port=$APP_PORT \
+                    buildAMI.json"
+                }
+            }
+        }
+    }
+}
