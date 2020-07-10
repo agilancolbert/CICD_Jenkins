@@ -1,0 +1,49 @@
+pipeline {
+   agent any
+    environment {
+        GitBranch = "master"
+    }
+    
+   stages {
+        stage('Clean Jenkins Workspace before start') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+        stage('checkout git') {
+            steps {
+                sh "pwd"
+                dir("Deploy_BDD") {
+                    sh "pwd"
+                    git(
+                        url: 'https://github.com/agilancolbert/Deploy_BDD_Ticketing',
+                        credentialsId: '230b152e-b19e-4369-b6b5-68914f6456c2',
+                        branch: "${GitBranch}"
+                    )
+                    sh "ls"
+                }
+            }
+        }
+        
+        stage('Deploy BDD') {
+            steps {
+                dir("Deploy_BDD") {
+                    sh "pwd"
+                    wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'xterm']) {
+                        sh "terraform init -backend-config='bucket=devops-efrei-agikexel' -backend-config='key=$APP_NAME/$ENV/DeployBDD/infra.tfstate' -backend-config='region=eu-west-1'"
+                        sh "terraform apply -auto-approve"
+                    }
+                }
+            }
+        }
+        
+        /*stage('Import BDD data') {
+            steps {
+                dir("Deploy_BDD") {
+                    sh "mysql -u$USERNAME -p$PASSWORD -h$ENDPOINT < ticketing.sql"
+                }
+            }
+        }*/
+    }
+}
