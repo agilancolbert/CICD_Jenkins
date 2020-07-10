@@ -3,6 +3,7 @@ pipeline {
     environment {
         GitBranch = "master"
         EC2_IP = sh(script: 'curl http://169.254.169.254/latest/meta-data/public-ipv4', returnStdout: true)
+        endpoint = sh(script: "aws rds --region eu-west-1 describe-db-instances --query 'DBInstances[*].Endpoint.Address' | jq -j '.[0]'", returnStdout: true)
     }
     
     stages {
@@ -35,6 +36,9 @@ pipeline {
                     -var app_name=$APP_NAME \
                     -var app_repo=$APP_REPO \
                     -var app_port=$APP_PORT \
+                    -var endpoint=${endpoint} \
+                    -var username=$USERNAME \
+                    -var password=$PASSWORD \
                     buildAMI.json"
                 }
             }
