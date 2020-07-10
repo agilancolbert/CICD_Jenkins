@@ -37,13 +37,5 @@ pipeline {
                 }
             }
         }
-        
-        /*stage('Import BDD data') {
-            steps {
-                dir("Deploy_BDD") {
-                    sh "mysql -u$USERNAME -p$PASSWORD -h$ENDPOINT < ticketing.sql"
-                }
-            }
-        }*/
     }
 }
