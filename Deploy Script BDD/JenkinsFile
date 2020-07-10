@@ -1,0 +1,40 @@
+pipeline {
+   agent any
+    environment {
+        GitBranch = "master"
+        AWS_DEFAULT_OUTPUT='json'
+        endpoint = sh(script: "aws rds --region eu-west-1 describe-db-instances --query 'DBInstances[*].Endpoint.Address' | jq -j '.[0]'", returnStdout: true)
+    }
+    
+   stages {
+        stage('Clean Jenkins Workspace before start') {
+            steps {
+                cleanWs()
+            }
+        }
+        
+         stage('checkout git') {
+            steps {
+                sh "pwd"
+                dir("Deploy_BDD") {
+                    sh "pwd"
+                    git(
+                        url: 'https://github.com/agilancolbert/Deploy_BDD_Ticketing',
+                        credentialsId: '230b152e-b19e-4369-b6b5-68914f6456c2',
+                        branch: "${GitBranch}"
+                    )
+                    sh "ls"
+                }
+            }
+        }
+        
+        stage('Import BDD data') {
+            steps {
+                dir("Deploy_BDD") {
+                    sh "mysql -u$USERNAME -p$PASSWORD -h${endpoint} < 'ticketing.sql'"
+                    sh "mysql -u$USERNAME -p$PASSWORD -h${endpoint} -Dticketing -e 'select * from users'"
+                }
+            }
+        }
+    }
+}
